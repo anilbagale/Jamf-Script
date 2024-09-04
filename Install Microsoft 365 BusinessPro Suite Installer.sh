@@ -1,14 +1,4 @@
 #!/bin/bash
-# Guess I'm putting a license in
-# Licensed under the Apache License, Version 2.0 (the "License");  you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and limitations under the License.
-# Not intended for prod ¯\_(ツ)_/¯
-
-# -- Modified from Script originally published at https://gist.github.com/opragel/bda5626c3b13c3fe5467
-# -- * TEST TEST TEST!! * -- Noone is claiming this to be a "production ready" script... test and tweak to your needs!
 
 
 # Comment any download url below to skip install #
