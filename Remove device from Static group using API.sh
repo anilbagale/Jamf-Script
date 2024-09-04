@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Create API client and API Role in jamf.
+#Create API client and API Role in jamf pro > Settings > System > API roles and clients.
 #change value in the script
 #####"client_id"  
 #####"client_secret"
