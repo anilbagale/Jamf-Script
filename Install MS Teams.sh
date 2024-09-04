@@ -7,7 +7,7 @@ mkdir "/tmp/teams/";
 cd "/tmp/teams/";
 
 #Download Teams.
-curl -L -o /tmp/teams/Teams_osx.pkg "https://go.microsoft.com/fwlink/p/?LinkID=869428&clcid=0x4009&culture=en-in&country=IN&lm=deeplink&lmsrc=groupChatMarketingPageWeb&cmpid=directDownloadMac";
+curl -L -o /tmp/teams/Teams_osx.pkg "https://go.microsoft.com/fwlink/?linkid=2249065";
 
 #install Teams
 sudo installer -pkg /private/tmp/teams/Teams_osx.pkg -target /;
