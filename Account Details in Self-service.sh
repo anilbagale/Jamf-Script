@@ -1,18 +1,24 @@
 #!/bin/bash
 
+# Use this script to Get the detail of Platform SSO registered account, AZ last password change date, will expire , and remining days to expire.
+# Do this changes: Jamf Pro Settings > System > Cloud identity providers > (Name of you Cloud IDP) > Mapping Tab > Edit > change the phone field with "Lastpasswordchangedatetime" save it.
+# Create API client and API Role in jamf pro > Settings > System > API roles and clients
+# Client ID and secret used to authenticate to the Jamf Pro API
+# ONLY needs the "Read" privilege for the "Computer" object and nothing else
+# Client ID and secret used to authenticate to the Jamf Pro API
+# ONLY needs the "Read" privilege for the "Computer" object and nothing else
+
+client_id='client_id here'
+client_secret='client_secret here'
+jamf_pro_url='https://companyname.jamfcloud.com'
+icon="Icon path here"
+
+# ---------- SCRIPT LOGIC BELOW - DO NOT MODIFY ---------- #
 
 curUser=$(ls -l /dev/console | cut -d " " -f 4)
 loggedInUser=$( echo "show State:/Users/ConsoleUser" | scutil | awk '/Name :/ { print $3 }' )
 loggedInUserFullname=$( id -F "${loggedInUser}" )
 loggedInUserFirstname=$( echo "$loggedInUserFullname" | sed -E 's/^.*, // ; s/([^ ]*).*/\1/' | sed 's/\(.\{25\}\).*/\1…/' | awk '{print toupper(substr($0,1,1))substr($0,2)}' )
-
-# Client ID and secret used to authenticate to the Jamf Pro API
-# ONLY needs the "Read" privilege for the "Computer" object and nothing else
-client_id='bd1ed063-e48b-40fd-a03c-a6caa10f2e87'
-client_secret='86PGym6Se33acR8q0YS6wEqdLX--tAL33LPrkzUPi3S06DqmdwYDihd_aL6YRWnE'
-jamf_pro_url='https://iqvia.jamfcloud.com'
-
-# ---------- SCRIPT LOGIC BELOW - DO NOT MODIFY ---------- #
 
 # Get the computer's serial number
 serial_number=$(system_profiler SPHardwareDataType | awk '/Serial Number/{print $4}')
@@ -76,7 +82,6 @@ alignDescription="left"
 alignHeading="center"
 defaultButton="1"
 timeout="86400"
-icon="/Users/Shared/IQforpass.webp"
 
 # JAMF Helper window as it appears for targeted computers
 userChoice=$("$jamfHelper" -windowType "$windowType" -lockHUD -title "$title" -timeout "$timeout" -defaultButton "$defaultButton" -icon "$icon" -description "$description" -alignDescription "$alignDescription" -alignHeading "$alignHeading" -button1 "$button1")
