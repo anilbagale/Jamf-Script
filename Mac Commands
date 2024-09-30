@@ -1,0 +1,6 @@
+
+# Set Desktop Wallpaper
+# Create package to place image at "/Library/Desktop Pictures/" and modify below command with image name.
+osascript -e 'tell application "Finder" to set desktop picture to POSIX file "/Library/Desktop Pictures/DESKTOP_IMG.jpg"'
+--------------------------------------------------------------------------------------------------------------------------------------------
+
