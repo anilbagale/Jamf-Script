@@ -2,5 +2,9 @@
 # Set Desktop Wallpaper
 # Create package to place image at "/Library/Desktop Pictures/" and modify below command with image name.
 osascript -e 'tell application "Finder" to set desktop picture to POSIX file "/Library/Desktop Pictures/DESKTOP_IMG.jpg"'
---------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# Export a logs of any one policy by using this command 
+# Add this command in the package "PostInstall" - Change the time and file location with name as you need.
+log show --debug --style compact --predicate "subsystem BEGINSWITH 'com.jamf.management.binary' AND category == 'all'" --last 5m > /Users/Shared/log.log
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
