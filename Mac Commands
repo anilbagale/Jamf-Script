@@ -4,7 +4,9 @@
 osascript -e 'tell application "Finder" to set desktop picture to POSIX file "/Library/Desktop Pictures/DESKTOP_IMG.jpg"'
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Export a logs of any one policy by using this command 
-# Add this command in the package "PostInstall" - Change the time and file location with name as you need.
-log show --debug --style compact --predicate "subsystem BEGINSWITH 'com.jamf.management.binary' AND category == 'all'" --last 5m > /Users/Shared/log.log
+# Export a logs of any Self service policy by using this command 
+# Add this command in File & Process paylaod
+# Create folder if it is not created as per command - /var/log/MacMD
+# Modify this command: Change in time with 5s, 5m, 5h, 1d (s-seconds, m-minutes, h-hours, d-Days) |  change the policy ID  |  and File Name
+getDateAndTime=$(date "+%a_%b-%d-%Y_%H-%M-%S"); log show --debug --style compact --predicate "subsystem BEGINSWITH 'com.jamf.management.binary' AND category == 'all'" --last 5m | awk '/Checking for policy ID 1205/,0' > /var/log/MacMD/IQVIAWallpaper.$getDateAndTime.log
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
