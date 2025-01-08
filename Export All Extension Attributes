@@ -1,0 +1,98 @@
+#!/bin/bash
+
+#While runing this script it will prompt for jamf URL, Client ID & Client Secret ID, you can get this as below.
+#Login to Jamf Pro and navigate to Settings > System > API Roles and Clients
+#Click the + New button to create a new API Role, name it (e.g., "Read - Computer Extension Attributes"), and select the "Read Computer Extension Attributes" privilege.
+#Save the role, then create a new API Client with the same name, select the role you just created, and save it.
+#Generate a client secret and note the Client ID and Client Secret for use with the script.
+#It will Export your all Extension Attributes in /tmp folder
+
+BASE_URL=""
+CLIENT_ID=""
+CLIENT_SECRET=""
+ACCESS_TOKEN=""
+TOKEN_EXPIRATION_EPOCH=0
+
+# Prompt the user for necessary inputs if not set
+if [[ -z "$BASE_URL" ]]; then
+  read -e -p "Enter your Jamf Pro URL (e.g. https://yourcompany.jamfcloud.com): " BASE_URL
+fi
+BASE_URL=${BASE_URL%/}
+
+if [[ -z "$CLIENT_ID" ]]; then
+  read -e -p "Enter your Jamf Pro API Client ID: " CLIENT_ID
+fi
+
+if [[ -z "$CLIENT_SECRET" ]]; then
+  read -e -sp "Enter your Jamf Pro API Client Secret: " CLIENT_SECRET
+  echo ""
+fi
+
+# Function to get an access token
+get_access_token() {
+  current_epoch=$(date +%s)
+  if [[ -z $ACCESS_TOKEN ]] || [[ $TOKEN_EXPIRATION_EPOCH -lt $current_epoch ]]; then
+    echo "Fetching a new token"
+    response=$(curl -slX POST "${BASE_URL}/api/oauth/token" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      --data-urlencode "client_id=${CLIENT_ID}" \
+      --data-urlencode "grant_type=client_credentials" \
+      --data-urlencode "client_secret=${CLIENT_SECRET}")
+
+    ACCESS_TOKEN=$(echo "$response" | plutil -extract access_token raw -)
+    token_expires_in=$(echo "$response" | plutil -extract expires_in raw -)
+    TOKEN_EXPIRATION_EPOCH=$(($current_epoch + $token_expires_in - 1))
+  fi
+}
+
+# Function to convert and save XML
+convert_and_save_xml() {
+  local input_xml="$1"
+  local file_name="$2"
+
+  echo '<?xml version="1.0" encoding="UTF-8"?>
+  <computer_extension_attribute>
+    <displayName>'$(xmllint --xpath 'string(//name)' - <<<"$input_xml")'</displayName>
+    <enabled>'$(xmllint --xpath 'string(//enabled)' - <<<"$input_xml")'</enabled>
+    <description>'$(xmllint --xpath 'string(//description)' - <<<"$input_xml")'</description>
+    <dataType>'$(xmllint --xpath 'string(//data_type)' - <<<"$input_xml")'</dataType>
+    <inputType>
+      <type>'$(xmllint --xpath 'string(//input_type/type)' - <<<"$input_xml")'</type>
+      <platform>'$(xmllint --xpath 'string(//input_type/platform)' - <<<"$input_xml")'</platform>
+      <scriptContentsMac>'$(xmllint --xpath 'string(//input_type/script)' - <<<"$input_xml")'</scriptContentsMac>
+    </inputType>
+    <inventory_display>'$(xmllint --xpath 'string(//inventory_display)' - <<<"$input_xml")'</inventory_display>
+  </computer_extension_attribute>' > "/tmp/${file_name}.xml"
+}
+
+# Get an access token
+get_access_token
+
+# Fetch all extension attributes
+allEA=$(curl -slX GET "${BASE_URL}/JSSResource/computerextensionattributes" \
+  -H "Authorization: Bearer $ACCESS_TOKEN")
+
+# Extract all EA IDs and names
+eaIDs=$(echo "$allEA" | xmllint --xpath '//computer_extension_attribute/id/text()' -)
+eaNames=$(echo "$allEA" | xmllint --xpath '//computer_extension_attribute/name/text()' -)
+
+# Convert IDs and Names into arrays
+IFS=$'\n' read -rd '' -a eaIDArray <<<"$eaIDs"
+IFS=$'\n' read -rd '' -a eaNameArray <<<"$eaNames"
+
+# Loop through each EA and download it
+for index in "${!eaIDArray[@]}"; do
+  EA_ID="${eaIDArray[$index]}"
+  EA_NAME="${eaNameArray[$index]// /_}" # Replace spaces with underscores for filenames
+
+  echo "Downloading Extension Attribute: $EA_NAME (ID: $EA_ID)"
+
+  # Download the EA in XML format
+  rawEA=$(curl -slX GET "${BASE_URL}/JSSResource/computerextensionattributes/id/$EA_ID" \
+    -H "Authorization: Bearer $ACCESS_TOKEN")
+
+  # Convert and save the EA to an XML file
+  convert_and_save_xml "$rawEA" "$EA_NAME"
+done
+
+echo "All extension attributes have been downloaded and saved to /tmp."
