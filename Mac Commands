@@ -12,3 +12,7 @@ getDateAndTime=$(date "+%a_%b-%d-%Y_%H-%M-%S"); log show --debug --style compact
 or 
 getDateAndTime=$(date "+%a_%b-%d-%Y_%H-%M-%S"); log show --debug --style compact --predicate "subsystem BEGINSWITH 'com.jamf.management.binary' AND category == 'all'" --last 5m | awk '/Checking for policies triggered by "Policy_trinter_name"/,0' > /var/log/MacMD/GoogleChrome.$(date +%Y-%m-%d_%H-%M-%S).log
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Install Certificate on mac device and Mark it as trusted certiticate
+# Modify command with Certificate location on mac device
+sudo security add-trusted-cert -d -r trustAsRoot -p codeSign -k "/Library/Keychains/System.Keychain" /CertificatePath/cert_inc.cer
