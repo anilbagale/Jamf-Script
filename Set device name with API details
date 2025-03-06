@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# This script will get the data from API and create hostname base on the details
+# In this script we are pulling building name and Asset tag from API and creating hostname line - (BuildingWLAssetTag)
+
+client_id='CLIENT ID HERE'
+client_secret='CLIENT SECRET HERE'
+jamf_pro_url='JAMF PRO URL'
+JAMF_BINARY="/usr/local/bin/jamf"
+
+# Get an access token based on the client ID and secret above
+token_response=$(curl --silent --location --request POST "${jamf_pro_url}/api/oauth/token" \
+  --header "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "client_id=${client_id}" \
+  --data-urlencode "grant_type=client_credentials" \
+  --data-urlencode "client_secret=${client_secret}")
+
+access_token=$(echo "$token_response" | plutil -extract access_token raw -)
+
+echo $access_token
+
+
+# Check JSS Status with JAMF Binary
+	checkJSS=$("${JAMF_BINARY}" checkJSSConnection | sed -n 2p)
+	
+	
+	if [[ $checkJSS == "The JSS is available." ]]; then
+		
+		echo "JAMF Binary has connected successfully...."
+		
+	else
+		
+		echo "JAMF Binary has NOT connected successfully - Exit Code: $checkJSS"
+		resetNetworkInterfaces
+		sleep 1
+		
+	fi
+		
+# Local information
+getComputerHostname=$( echo `hostname` | tr '[a-z]' '[A-Z]' )
+getLoggedInUser="$(stat -f%Su /dev/console)"
+logBannerDate=`date +"%Y-%b-%d %T"`
+retryEvery=30
+		
+##########################################################################################
+#	MAIN SCRIPT
+##########################################################################################
+		
+
+    echo "##########################################################################################"
+		echo "#                                                                                        #"
+		echo "#       Create Computer Hostname - $logBannerDate                                        #"
+		echo "#                                                                                        #"
+		echo "##########################################################################################"
+		
+		
+		# Get serial of this Mac
+		echo "Finding the Serial number of the Mac."
+		serial_num=$(ioreg -l | awk '/IOPlatformSerialNumber/ { split($0, line, "\""); printf("%s\n", line[4]); }')
+		echo "We found that the Serial number of the Mac is: ${serial_num}"
+		
+		# Get current hostname
+		echo "Finding the current hostname for the Mac."
+		echo "We found that the Hostname of the mac is: ${getComputerHostname}"
+
+					getBuilding=$(/usr/bin/curl "${jamf_pro_url}/JSSResource/computers/serialnumber/${serial_num}/subset/location" \
+												--silent \
+												--request GET \
+												--header "Authorization: Bearer ${access_token}" \
+  												--header "Accept: application/xml" \
+												| xmllint --format - 2>/dev/null | awk -F'>|<' '/<building>/{print $3}' 2> /dev/null)
+					
+					
+					
+					echo "The Office Location Prefix from the Search of Computer with Serial #: ${serial_num} on JAMF Server returned: ${getBuilding}"
+					
+
+					# Request the Asset tag we updated with the initial Dep notify script with the asset tag recon.
+					echo "Requesting the Asset Tag from the Search of Computer with Serial #: ${serial_num} on JAMF Server."
+					
+					getAssetTag=$(/usr/bin/curl "${jamf_pro_url}/JSSResource/computers/serialnumber/${serial_num}/subset/general" \
+													--silent \
+													--request GET \
+													--header "Authorization: Bearer ${access_token}" \
+  													--header "Accept: application/xml" \
+													| xmllint --format - 2>/dev/null | awk -F'>|<' '/<asset_tag>/{print $3}' 2> /dev/null)
+					
+					echo "The Asset Tag from the Search of Computer with Serial #: ${serial_num} on JAMF Server returned: ${getAssetTag}"
+					
+					# Computer Name Parts
+					sitePrefix="${getBuilding}"
+					hardwarePrefix="WL"
+					assetTagNumber=${getAssetTag}
+                    
+				
+					# Build Computer Name
+					echo "Building Computer Name for Computer with Serial #: ${serial_num} with Site Prefix: ${getBuilding} now."
+                    
+					userLdapOfficeNameRaw=${sitePrefix}${hardwarePrefix}${assetTagNumber} 
+					/usr/sbin/scutil --set ComputerName "${userLdapOfficeNameRaw}" | tr '[a-z]' '[A-Z]'
+					/usr/sbin/scutil --set LocalHostName "${userLdapOfficeNameRaw}" | tr '[a-z]' '[A-Z]'
+					/usr/sbin/scutil --set HostName "${userLdapOfficeNameRaw}" | tr '[a-z]' '[A-Z]'
+					
+                    
+					echo "The Computer Name Built for the Computer with Serial #: ${serial_num} with Site Prefix: ${getBuilding} is: ${userLdapOfficeNameRaw}"
+					sudo jamf recon
+exit
