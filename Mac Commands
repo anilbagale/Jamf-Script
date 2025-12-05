@@ -16,3 +16,10 @@ getDateAndTime=$(date "+%a_%b-%d-%Y_%H-%M-%S"); log show --debug --style compact
 # Install Certificate on mac device and Mark it as trusted certiticate
 # Modify command with Certificate location on mac device
 sudo security add-trusted-cert -d -r trustAsRoot -p codeSign -k "/Library/Keychains/System.Keychain" /CertificatePath/cert_inc.cer
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Provide admin rights - 
+dseditgroup -o edit -a "$(who | awk '/console/{ print $1 }')" -t user admin
+
+Remove Admin rights - 
+dseditgroup -o edit -d "$(who | awk '/console/{ print $1 }')" -t user admin
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
